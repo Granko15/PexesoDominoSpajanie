@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slovo &amp; Piktogram – prototyp</title>
+<style>
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --bg:#f7f5f0; --card:#fff; --ink:#1d1a15; --muted:#6d6559;
+  --accent:#2f6f4f; --accent-d:#255a40; --soft:#e4f0e9;
+  --line:#e2ddd3; --r:14px;
+}
+html,body{margin:0;padding:0}
+body{
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  background:var(--bg); color:var(--ink); line-height:1.4;
+  -webkit-text-size-adjust:100%; -webkit-tap-highlight-color:transparent;
+}
+.wrap{max-width:900px;margin:0 auto;padding:16px 16px 56px}
+.title{font-size:clamp(20px,5vw,28px);margin:8px 0 4px}
+.lead{color:var(--muted);margin:4px 0 14px;font-size:clamp(14px,3.6vw,16px)}
+.back{background:none;border:none;color:var(--accent);font-size:15px;
+  padding:8px 0;cursor:pointer;font-weight:600;font-family:inherit}
+.back:hover{text-decoration:underline}
+.note{color:var(--muted);font-size:13px;margin-top:28px;text-align:center}
+
+/* --- výber témy --- */
+.topic-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:12px}
+.topic-card{background:var(--card);border:2px solid var(--line);border-radius:var(--r);
+  padding:14px 12px;display:flex;flex-direction:column;align-items:center;gap:6px;
+  cursor:pointer;font-family:inherit;color:inherit;text-align:center;
+  transition:transform .12s,border-color .12s,box-shadow .12s}
+.topic-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.06)}
+.topic-icons{font-size:24px;letter-spacing:2px}
+.topic-name{font-weight:700;font-size:15px}
+.topic-meta{font-size:12px;color:var(--muted)}
+
+/* --- výber hry --- */
+.game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.game-card{background:var(--card);border:2px solid var(--line);border-radius:var(--r);
+  padding:18px 16px;display:flex;flex-direction:column;gap:4px;align-items:flex-start;
+  cursor:pointer;font-family:inherit;color:inherit;text-align:left;
+  transition:transform .12s,border-color .12s,box-shadow .12s}
+.game-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.06)}
+.game-icon{font-size:26px}
+.game-name{font-weight:700;font-size:17px}
+.game-desc{font-size:13px;color:var(--muted)}
+
+/* --- pexeso --- */
+.pexeso-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.pcard{aspect-ratio:1/1;border-radius:var(--r);border:2px solid var(--line);
+  background:var(--card);cursor:pointer;padding:6px;font-family:inherit;color:inherit;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;
+  transition:background .15s,border-color .15s,transform .1s}
+.pcard:active{transform:scale(.97)}
+.pcard.back{background:var(--accent);border-color:var(--accent-d);color:#fff;
+  font-size:clamp(18px,5vw,28px);font-weight:700}
+.pcard.back::after{content:"?"}
+.pcard.matched{background:var(--soft);border-color:var(--accent);opacity:.65;cursor:default}
+.p-emoji{font-size:clamp(24px,7vw,42px);line-height:1}
+.p-word{font-size:clamp(11px,3vw,16px);font-weight:700;word-break:break-word;text-align:center}
+
+/* --- spájanie --- */
+.match{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.match-col{display:flex;flex-direction:column;gap:10px}
+.mcard{min-height:56px;border-radius:var(--r);border:2px solid var(--line);background:var(--card);
+  cursor:pointer;font-family:inherit;color:inherit;display:flex;align-items:center;
+  justify-content:center;padding:10px;transition:border-color .12s,background .12s,box-shadow .12s}
+.mcard:hover{border-color:var(--accent)}
+.mcard.sel{border-color:var(--accent);background:var(--soft);box-shadow:0 0 0 3px rgba(47,111,79,.15)}
+.mcard.done{background:var(--soft);border-color:var(--accent);opacity:.6;cursor:default}
+.m-word{font-weight:700;font-size:clamp(13px,3.6vw,17px);text-align:center}
+
+/* --- domino --- */
+.domino-chain{display:flex;gap:8px;overflow-x:auto;padding:14px 10px;margin-bottom:6px;
+  background:var(--card);border:2px dashed var(--line);border-radius:var(--r);
+  min-height:110px;align-items:center}
+.domino-hand{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.dtile{flex:0 0 auto;display:flex;border:2px solid var(--ink);border-radius:10px;
+  overflow:hidden;background:#fff;height:78px}
+.dhalf{width:62px;display:flex;align-items:center;justify-content:center;padding:4px;
+  border-right:2px solid var(--ink)}
+.dhalf:last-child{border-right:none}
+.dhalf .p-emoji{font-size:26px}
+.dhalf .p-word{font-size:11px;line-height:1.1}
+button.dtile{cursor:pointer;font-family:inherit;color:inherit;padding:0;
+  transition:transform .1s,box-shadow .12s,opacity .12s}
+.hand-tile{opacity:.4;filter:grayscale(1);cursor:default}
+.hand-tile.playable{opacity:1;filter:none;border-color:var(--accent);cursor:pointer;
+  box-shadow:0 3px 0 var(--accent)}
+.hand-tile.playable:hover{transform:translateY(-2px)}
+
+/* --- spoločné --- */
+.win{margin-top:20px;padding:16px;border-radius:var(--r);background:var(--soft);
+  border:2px solid var(--accent);text-align:center;font-weight:700;font-size:17px}
+.btn{display:inline-block;margin-left:8px;background:var(--accent);color:#fff;border:none;
+  padding:10px 18px;border-radius:10px;font-weight:700;font-family:inherit;font-size:15px;cursor:pointer}
+.btn:hover{background:var(--accent-d)}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script src="data.js"></script>
+<script>
+const app = document.getElementById('app');
+const state = { topic: null };
+
+/* ---------- pomocné ---------- */
+function shuffle(arr){
+  const a = arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function faceHTML(half){
+  return half.kind === 'icon'
+    ? `<span class="p-emoji">${half.icon}</span>`
+    : `<span class="p-word">${esc(half.word)}</span>`;
+}
+
+/* ---------- obrazovka: témy ---------- */
+function renderHome(){
+  state.topic = null;
+  app.innerHTML = `
+    <h1 class="title">Slovo &amp; Piktogram</h1>
+    <p class="lead">Interaktívne hry na precvičovanie slov a piktogramov.</p>
+    <p class="lead"><strong>Vyber tému:</strong></p>
+    <div class="topic-grid">
+      ${TOPICS.map(t => `
+        <button class="topic-card" data-topic="${t.id}">
+          <span class="topic-icons">${t.cards.slice(0,4).map(c=>`<span>${c.icon}</span>`).join('')}</span>
+          <span class="topic-name">${esc(t.name)}</span>
+          <span class="topic-meta">${t.cards.length} slov</span>
+        </button>`).join('')}
+    </div>
+    <p class="note">Prototyp · obsah sa edituje v súbore <code>data.js</code></p>
+  `;
+  app.querySelectorAll('[data-topic]').forEach(btn => {
+    btn.onclick = () => {
+      state.topic = TOPICS.find(t => t.id === btn.dataset.topic);
+      renderMenu();
+    };
+  });
+}
+
+/* ---------- obrazovka: výber hry ---------- */
+function renderMenu(){
+  const t = state.topic;
+  app.innerHTML = `
+    <button class="back" data-back>← Témy</button>
+    <h1 class="title">${esc(t.name)}</h1>
+    <p class="lead">Vyber hru:</p>
+    <div class="game-grid">
+      <button class="game-card" data-game="pexeso">
+        <span class="game-icon">🃏</span>
+        <span class="game-name">Pexeso</span>
+        <span class="game-desc">Hľadaj dvojice slovo – piktogram</span>
+      </button>
+      <button class="game-card" data-game="matching">
+        <span class="game-icon">🔗</span>
+        <span class="game-name">Spájanie</span>
+        <span class="game-desc">Priraď slovo k správnemu piktogramu</span>
+      </button>
+      <button class="game-card" data-game="domino">
+        <span class="game-icon">🁫</span>
+        <span class="game-name">Domino</span>
+        <span class="game-desc">Skladaj reťaz slovo – piktogram</span>
+      </button>
+    </div>
+  `;
+  app.querySelector('[data-back]').onclick = renderHome;
+  app.querySelectorAll('[data-game]').forEach(b => {
+    b.onclick = () => {
+      if(b.dataset.game === 'pexeso')   startPexeso();
+      if(b.dataset.game === 'matching') startMatching();
+      if(b.dataset.game === 'domino')   startDomino();
+    };
+  });
+}
+
+/* ---------- HRA 1: PEXESO ---------- */
+function startPexeso(){
+  const topic = state.topic;
+  const pairs = shuffle(topic.cards).slice(0, Math.min(8, topic.cards.length));
+
+  let deck = [];
+  pairs.forEach((c, i) => {
+    deck.push({ pid:i, kind:'word', word:c.word, icon:c.icon });
+    deck.push({ pid:i, kind:'icon', word:c.word, icon:c.icon });
+  });
+  deck = shuffle(deck);
+
+  const flipped = new Set();
+  const matched = new Set();
+  let lock = false;
+
+  function render(){
+    const done = matched.size === pairs.length;
+    app.innerHTML = `
+      <button class="back" data-back>← Späť</button>
+      <h1 class="title">Pexeso · ${esc(topic.name)}</h1>
+      <p class="lead">Nájdi dvojicu: slovo a jeho piktogram.
+        Nájdené: <strong>${matched.size}/${pairs.length}</strong></p>
+      <div class="pexeso-grid">
+        ${deck.map((c, i) => {
+          const open = flipped.has(i) || matched.has(c.pid);
+          const cls = ['pcard'];
+          if(!open) cls.push('back');
+          if(matched.has(c.pid)) cls.push('matched');
+          const inner = !open ? '' : (c.kind === 'icon'
+            ? `<span class="p-emoji">${c.icon}</span>`
+            : `<span class="p-word">${esc(c.word)}</span>`);
+          return `<button class="${cls.join(' ')}" data-i="${i}">${inner}</button>`;
+        }).join('')}
+      </div>
+      ${done ? `<div class="win">🎉 Hotovo!<button class="btn" data-again>Hrať znova</button></div>` : ''}
+    `;
+    app.querySelector('[data-back]').onclick = renderMenu;
+    const again = app.querySelector('[data-again]');
+    if(again) again.onclick = startPexeso;
+    app.querySelectorAll('.pcard').forEach(el => {
+      el.onclick = () => click(Number(el.dataset.i));
+    });
+  }
+
+  function click(i){
+    if(lock) return;
+    const card = deck[i];
+    if(matched.has(card.pid) || flipped.has(i)) return;
+    flipped.add(i);
+
+    if(flipped.size === 2){
+      const [a, b] = [...flipped];
+      if(deck[a].pid === deck[b].pid){
+        matched.add(deck[a].pid);
+        flipped.clear();
+        render();
+      } else {
+        lock = true;
+        render();
+        setTimeout(() => { flipped.clear(); lock = false; render(); }, 900);
+      }
+    } else {
+      render();
+    }
+  }
+
+  render();
+}
+
+/* ---------- HRA 2: SPÁJANIE ---------- */
+function startMatching(){
+  const topic = state.topic;
+  const pairs = shuffle(topic.cards).slice(0, Math.min(6, topic.cards.length))
+                  .map((c,i) => ({ ...c, pid:i }));
+  const left  = shuffle(pairs);
+  const right = shuffle(pairs);
+
+  const done = new Set();
+  let selL = null, selR = null, lock = false;
+
+  function render(){
+    const finished = done.size === pairs.length;
+    app.innerHTML = `
+      <button class="back" data-back>← Späť</button>
+      <h1 class="title">Spájanie · ${esc(topic.name)}</h1>
+      <p class="lead">Klikni na slovo a potom na správny piktogram.
+        Hotové: <strong>${done.size}/${pairs.length}</strong></p>
+      <div class="match">
+        <div class="match-col">
+          ${left.map((c,i) => {
+            const cls = ['mcard'];
+            if(selL === i) cls.push('sel');
+            if(done.has(c.pid)) cls.push('done');
+            return `<button class="${cls.join(' ')}" data-side="L" data-i="${i}">
+                      <span class="m-word">${esc(c.word)}</span></button>`;
+          }).join('')}
+        </div>
+        <div class="match-col">
+          ${right.map((c,i) => {
+            const cls = ['mcard'];
+            if(selR === i) cls.push('sel');
+            if(done.has(c.pid)) cls.push('done');
+            return `<button class="${cls.join(' ')}" data-side="R" data-i="${i}">
+                      <span class="p-emoji">${c.icon}</span></button>`;
+          }).join('')}
+        </div>
+      </div>
+      ${finished ? `<div class="win">🎉 Hotovo!<button class="btn" data-again>Hrať znova</button></div>` : ''}
+    `;
+    app.querySelector('[data-back]').onclick = renderMenu;
+    const again = app.querySelector('[data-again]');
+    if(again) again.onclick = startMatching;
+    app.querySelectorAll('.mcard').forEach(el => {
+      el.onclick = () => click(el.dataset.side, Number(el.dataset.i));
+    });
+  }
+
+  function click(side, i){
+    if(lock) return;
+    const card = side === 'L' ? left[i] : right[i];
+    if(done.has(card.pid)) return;
+
+    if(side === 'L') selL = (selL === i ? null : i);
+    else             selR = (selR === i ? null : i);
+
+    if(selL !== null && selR !== null){
+      if(left[selL].pid === right[selR].pid){
+        done.add(left[selL].pid);
+        selL = selR = null;
+        render();
+      } else {
+        lock = true;
+        render();
+        setTimeout(() => { selL = selR = null; lock = false; render(); }, 700);
+      }
+    } else {
+      render();
+    }
+  }
+
+  render();
+}
+
+/* ---------- HRA 3: DOMINO ---------- */
+function startDomino(){
+  const topic = state.topic;
+  const chosen = shuffle(topic.cards)
+    .slice(0, Math.min(8, topic.cards.length))
+    .map((c,i) => ({ ...c, pid:i }));
+  const n = chosen.length;
+
+  // dlaždica = [piktogram pojmu A | slovo pojmu B], A ≠ B
+  let tiles = chosen.map((p, i) => ({
+    id: i,
+    left:  { kind:'icon', pid: p.pid, icon: p.icon },
+    right: { kind:'word', pid: chosen[(i+1) % n].pid, word: chosen[(i+1) % n].word }
+  }));
+  tiles = shuffle(tiles);
+
+  const chain = [tiles[0]];
+  const hand  = tiles.slice(1);
+
+  function render(){
+    const leftEnd  = chain[0].left;                 // vždy piktogram
+    const rightEnd = chain[chain.length-1].right;   // vždy slovo
+    const finished = hand.length === 0;
+
+    app.innerHTML = `
+      <button class="back" data-back>← Späť</button>
+      <h1 class="title">Domino · ${esc(topic.name)}</h1>
+      <p class="lead">Prikladaj dlaždice tak, aby <strong>slovo</strong> sedelo k
+        <strong>piktogramu</strong> na konci reťaze. Zostáva: <strong>${hand.length}</strong></p>
+
+      <div class="domino-chain">
+        ${chain.map(t => `
+          <div class="dtile">
+            <span class="dhalf">${faceHTML(t.left)}</span>
+            <span class="dhalf">${faceHTML(t.right)}</span>
+          </div>`).join('')}
+      </div>
+
+      <div class="domino-hand">
+        ${hand.map((t, idx) => {
+          const canR = t.left.pid  === rightEnd.pid;
+          const canL = t.right.pid === leftEnd.pid;
+          const playable = canR || canL;
+          return `<button class="dtile hand-tile ${playable ? 'playable' : ''}" data-idx="${idx}">
+                    <span class="dhalf">${faceHTML(t.left)}</span>
+                    <span class="dhalf">${faceHTML(t.right)}</span>
+                  </button>`;
+        }).join('')}
+      </div>
+
+      ${finished ? `<div class="win">🎉 Hotovo!<button class="btn" data-again>Hrať znova</button></div>` : ''}
+    `;
+    app.querySelector('[data-back]').onclick = renderMenu;
+    const again = app.querySelector('[data-again]');
+    if(again) again.onclick = startDomino;
+    app.querySelectorAll('.hand-tile.playable').forEach(el => {
+      el.onclick = () => place(Number(el.dataset.idx));
+    });
+  }
+
+  function place(idx){
+    const t = hand[idx];
+    if(!t) return;
+    const rightEnd = chain[chain.length-1].right;
+    const leftEnd  = chain[0].left;
+
+    if(t.left.pid === rightEnd.pid)        chain.push(t);
+    else if(t.right.pid === leftEnd.pid)   chain.unshift(t);
+    else return;
+
+    hand.splice(idx, 1);
+    render();
+  }
+
+  render();
+}
+
+/* ---------- štart ---------- */
+renderHome();
+</script>
+</body>
+</html>
